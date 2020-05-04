@@ -4,6 +4,7 @@ from django.urls import resolve
 from django.test import TestCase
 from .views import home, board_topics, new_topic
 from .models import Board, Topic, Post
+from .forms import NewTopicForm
 
 class HomeTest(TestCase):
     def setUp(self):
@@ -57,7 +58,13 @@ class NewTopicTests(TestCase):
         Board.objects.create(name='Django', description='Django board')
         User.objects.create_user(username='john', email='jhone@gmal.com', password='123')
         
-    
+    def test_contains_form(self):
+        url = reverse('new_topic',kwargs={'pk':1})
+        response = self.client.get(url)
+        form = response.context.get('form')
+        self.assertIsInstance(form, NewTopicForm)
+
+
     def test_new_topic_view_succes_status_code(self):
         url = reverse('new_topic', kwargs={'pk':1})
         response = self.client.get(url)
@@ -94,14 +101,16 @@ class NewTopicTests(TestCase):
         self.assertTrue(Topic.objects.exists())
         self.assertTrue(Post.objects.exists())
 
-    def test_new_topic_invalid_post_date(self):
+    def test_new_topic_invalid_post_data(self):
         '''
         Invalid post data should not redirect
         The expected bahavior is to show the  form again with  validation error
         '''
         url = reverse('new_topic',kwargs={'pk':1})
         response =self.client.post(url,{})
+        form = response.context.get('form')
         self.assertAlmostEquals(response.status_code, 200)
+        self.assertTrue(form.errors)
     
     def test_new_topic_invalid_post_data_empty_fields(self):
         '''
